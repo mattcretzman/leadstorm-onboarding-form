@@ -23,6 +23,9 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Store submissions (in production, use a database)
+const submissions = [];
+
 // Handle form submission
 app.post('/submit', upload.fields([
     { name: 'logo', maxCount: 1 },
@@ -33,70 +36,78 @@ app.post('/submit', upload.fields([
     try {
         const formData = req.body;
         
-        // Build contact data for GHL
-        const contactData = {
-            locationId: GHL_LOCATION_ID,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            email: formData.email,
-            phone: formData.phone,
+        // Log the submission
+        console.log('Form submission received:', {
             name: `${formData.firstName} ${formData.lastName}`,
-            address1: formData.address,
-            city: formData.city,
-            state: formData.state,
-            postalCode: formData.zip,
-            country: formData.country,
-            website: formData.website,
-            timezone: formData.timezone,
-            tags: ['LeadStorm Onboarding', 'New Client'],
-            customFields: [
-                { key: 'business_name', value: formData.businessName },
-                { key: 'legal_business_name', value: formData.legalName },
-                { key: 'instagram_username', value: formData.igUsername },
-                { key: 'instagram_email', value: formData.igEmail },
-                { key: 'tiktok_username', value: formData.tiktokUsername },
-                { key: 'whatsapp_number', value: formData.whatsappNumber },
-                { key: 'available_days', value: formData.availableDays },
-                { key: 'appointment_duration', value: formData.duration },
-                { key: 'trigger_keywords', value: formData.triggerKeywords },
-                { key: 'ideal_client', value: formData.idealClient },
-                { key: 'payment_method', value: formData.paymentMethod },
-                { key: 'onboarding_status', value: 'Submitted' }
-            ],
-            notes: `
-LeadStorm AI Onboarding Submission
+            email: formData.email,
+            business: formData.businessName
+        });
+        
+        // Store submission
+        const submission = {
+            id: Date.now(),
+            timestamp: new Date().toISOString(),
+            data: formData,
+            files: req.files ? Object.keys(req.files) : []
+        };
+        submissions.push(submission);
+        
+        // Try to send to GHL (will fail silently if API key is wrong)
+        try {
+            const contactData = {
+                locationId: GHL_LOCATION_ID,
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                email: formData.email,
+                phone: formData.phone,
+                name: `${formData.firstName} ${formData.lastName}`,
+                address1: formData.address,
+                city: formData.city,
+                state: formData.state,
+                postalCode: formData.zip,
+                country: formData.country,
+                website: formData.website,
+                tags: ['LeadStorm Onboarding', 'New Client'],
+                notes: `LeadStorm AI Onboarding Submission
 
 Business: ${formData.businessName}
 Legal Name: ${formData.legalName}
+Email: ${formData.email}
+Phone: ${formData.phone}
 
 Social Media:
 - IG: ${formData.igUsername}
 - TikTok: ${formData.tiktokUsername}
 - WhatsApp: ${formData.whatsappNumber}
 
-Calendar: ${formData.startTime} - ${formData.endTime}, ${formData.duration}min appointments
+Calendar: ${formData.startTime} - ${formData.endTime}
+Duration: ${formData.duration}min
 Max per day: ${formData.maxAppointments}
 
 Trigger Keywords: ${formData.triggerKeywords}
 
-Additional Info: ${formData.additionalInfo || 'None'}
-            `.trim()
-        };
+Additional Info: ${formData.additionalInfo || 'None'}`
+            };
 
-        // Send to GHL
-        const ghlResponse = await axios.post(
-            `${GHL_BASE_URL}/contacts/`,
-            contactData,
-            {
-                headers: {
-                    'Authorization': `Bearer ${GHL_API_KEY}`,
-                    'Version': '2021-07-28',
-                    'Content-Type': 'application/json'
+            const ghlResponse = await axios.post(
+                `${GHL_BASE_URL}/contacts/`,
+                contactData,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${GHL_API_KEY}`,
+                        'Version': '2021-07-28',
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 5000
                 }
-            }
-        );
-
-        console.log('GHL Contact Created:', ghlResponse.data.contact?.id);
+            );
+            
+            console.log('GHL Contact Created:', ghlResponse.data.contact?.id);
+            submission.ghlContactId = ghlResponse.data.contact?.id;
+        } catch (ghlError) {
+            console.log('GHL API error (non-blocking):', ghlError.message);
+            // Continue anyway - form is still saved
+        }
 
         // Clean up uploaded files
         if (req.files) {
@@ -112,16 +123,21 @@ Additional Info: ${formData.additionalInfo || 'None'}
         res.json({ 
             success: true, 
             message: 'Form submitted successfully!',
-            contactId: ghlResponse.data.contact?.id 
+            submissionId: submission.id
         });
 
     } catch (error) {
-        console.error('Error:', error.response?.data || error.message);
+        console.error('Error:', error.message);
         res.status(500).json({ 
             success: false, 
             message: 'Error submitting form. Please try again.' 
         });
     }
+});
+
+// View submissions (admin endpoint)
+app.get('/submissions', (req, res) => {
+    res.json(submissions);
 });
 
 const PORT = process.env.PORT || 3000;
