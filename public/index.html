@@ -845,25 +845,29 @@
         // Form submission
         document.getElementById('onboardingForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            console.log('Form submit triggered');
             
-            if (!document.getElementById('confirm').checked) {
+            const confirmCheckbox = document.getElementById('confirm');
+            if (!confirmCheckbox || !confirmCheckbox.checked) {
                 alert('Please confirm the authorization checkbox.');
                 return;
             }
 
             // Show loading state
             const submitBtn = document.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Submitting...';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Submitting...';
+            }
 
             try {
                 // Collect form data as URL encoded string
                 const formData = new URLSearchParams();
                 
-                // Add all text inputs
-                const inputs = this.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input[type="url"], input[type="password"], input[type="time"], input[type="number"], select, textarea');
-                inputs.forEach(input => {
-                    if (input.name && input.value) {
+                // Add all inputs
+                const allInputs = this.querySelectorAll('input, select, textarea');
+                allInputs.forEach(input => {
+                    if (input.name && input.value && input.type !== 'checkbox' && input.type !== 'file') {
                         formData.append(input.name, input.value);
                     }
                 });
@@ -875,6 +879,8 @@
                 if (availableDays.length) formData.set('availableDays', availableDays.join(', '));
                 if (paymentMethods.length) formData.set('paymentMethod', paymentMethods.join(', '));
 
+                console.log('Submitting form data...');
+
                 // Submit to server
                 const response = await fetch('/submit', {
                     method: 'POST',
@@ -884,23 +890,30 @@
                     body: formData.toString()
                 });
 
+                console.log('Response status:', response.status);
                 const result = await response.json();
+                console.log('Result:', result);
 
                 if (result.success) {
                     // Show confirmation
                     currentSection = 7;
                     showSection(currentSection);
-                    document.querySelector('.progress-bar').style.display = 'none';
+                    const progressBar = document.querySelector('.progress-bar');
+                    if (progressBar) progressBar.style.display = 'none';
                 } else {
-                    alert('Error submitting form: ' + result.message);
+                    alert('Error: ' + result.message);
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Submit & Let\'s Get Started';
+                    }
+                }
+            } catch (error) {
+                console.error('Submit error:', error);
+                alert('Error submitting form: ' + error.message);
+                if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Submit & Let\'s Get Started';
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error submitting form. Please try again.');
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Submit & Let\'s Get Started';
             }
         });
     </script>
