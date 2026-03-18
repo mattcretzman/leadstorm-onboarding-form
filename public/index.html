@@ -809,22 +809,38 @@
             }
         }
 
-        // File upload handlers
-        document.getElementById('logo').addEventListener('change', function() {
-            document.getElementById('logoName').textContent = this.files[0]?.name || '';
-        });
+        // File upload handlers (only if elements exist)
+        const logoInput = document.getElementById('logo');
+        if (logoInput) {
+            logoInput.addEventListener('change', function() {
+                const logoName = document.getElementById('logoName');
+                if (logoName) logoName.textContent = this.files[0]?.name || '';
+            });
+        }
 
-        document.getElementById('scripts').addEventListener('change', function() {
-            document.getElementById('scriptsName').textContent = this.files[0]?.name || '';
-        });
+        const scriptsInput = document.getElementById('scripts');
+        if (scriptsInput) {
+            scriptsInput.addEventListener('change', function() {
+                const scriptsName = document.getElementById('scriptsName');
+                if (scriptsName) scriptsName.textContent = this.files[0]?.name || '';
+            });
+        }
 
-        document.getElementById('clientList').addEventListener('change', function() {
-            document.getElementById('clientListName').textContent = this.files[0]?.name || '';
-        });
+        const clientListInput = document.getElementById('clientList');
+        if (clientListInput) {
+            clientListInput.addEventListener('change', function() {
+                const clientListName = document.getElementById('clientListName');
+                if (clientListName) clientListName.textContent = this.files[0]?.name || '';
+            });
+        }
 
-        document.getElementById('faqFile').addEventListener('change', function() {
-            document.getElementById('faqFileName').textContent = this.files[0]?.name || '';
-        });
+        const faqFileInput = document.getElementById('faqFile');
+        if (faqFileInput) {
+            faqFileInput.addEventListener('change', function() {
+                const faqFileName = document.getElementById('faqFileName');
+                if (faqFileName) faqFileName.textContent = this.files[0]?.name || '';
+            });
+        }
 
         // Form submission
         document.getElementById('onboardingForm').addEventListener('submit', async function(e) {
