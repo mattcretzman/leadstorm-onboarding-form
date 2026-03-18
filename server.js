@@ -15,6 +15,8 @@ const GHL_API_KEY = process.env.GHL_API_KEY || 'pit-4984dd29-6cf2-4172-859c-6ccc
 const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID || 'mEVG4cNTDGfVm2PUOipQ';
 const GHL_BASE_URL = 'https://services.leadconnectorhq.com';
 
+console.log('GHL Config:', { locationId: GHL_LOCATION_ID, apiKeyPrefix: GHL_API_KEY.substring(0, 10) + '...' });
+
 // Store submissions in memory
 const submissions = [];
 
@@ -42,7 +44,8 @@ app.post('/submit', async (req, res) => {
         };
         submissions.push(submission);
         
-        // Try to send to GHL (will fail silently if API key is wrong)
+        // Try to send to GHL
+        console.log('Attempting GHL API call...');
         try {
             const contactData = {
                 locationId: GHL_LOCATION_ID,
@@ -79,27 +82,51 @@ Trigger Keywords: ${formData.triggerKeywords}
 Additional Info: ${formData.additionalInfo || 'None'}`
             };
 
-            // Agency API uses /contacts/upsert endpoint
-            const ghlResponse = await axios.post(
-                `${GHL_BASE_URL}/contacts/upsert`,
-                contactData,
-                {
-                    headers: {
-                        'Authorization': `Bearer ${GHL_API_KEY}`,
-                        'Version': '2021-07-28',
-                        'Content-Type': 'application/json'
-                    },
-                    timeout: 5000
-                }
-            );
+            console.log('Contact data prepared:', JSON.stringify(contactData, null, 2));
+
+            // Try standard contacts endpoint first
+            let ghlResponse;
+            try {
+                console.log('Trying /contacts/ endpoint...');
+                ghlResponse = await axios.post(
+                    `${GHL_BASE_URL}/contacts/`,
+                    contactData,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${GHL_API_KEY}`,
+                            'Version': '2021-07-28',
+                            'Content-Type': 'application/json'
+                        },
+                        timeout: 5000
+                    }
+                );
+            } catch (err1) {
+                console.log('/contacts/ failed, trying /contacts/upsert...');
+                ghlResponse = await axios.post(
+                    `${GHL_BASE_URL}/contacts/upsert`,
+                    contactData,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${GHL_API_KEY}`,
+                            'Version': '2021-07-28',
+                            'Content-Type': 'application/json'
+                        },
+                        timeout: 5000
+                    }
+                );
+            }
             
-            console.log('GHL Contact Created:', ghlResponse.data.contact?.id);
+            console.log('GHL SUCCESS! Contact Created:', ghlResponse.data.contact?.id);
             submission.ghlContactId = ghlResponse.data.contact?.id;
+            submission.ghlSuccess = true;
         } catch (ghlError) {
-            console.log('GHL API error:', ghlError.message);
+            console.log('GHL API FAILED:', ghlError.message);
+            submission.ghlError = ghlError.message;
             if (ghlError.response) {
                 console.log('GHL Error Status:', ghlError.response.status);
                 console.log('GHL Error Data:', JSON.stringify(ghlError.response.data));
+                submission.ghlErrorStatus = ghlError.response.status;
+                submission.ghlErrorData = ghlError.response.data;
             }
         }
 
