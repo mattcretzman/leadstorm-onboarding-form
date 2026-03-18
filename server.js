@@ -1,12 +1,9 @@
 const express = require('express');
 const axios = require('axios');
-const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
 
 app.use(cors());
 app.use(express.json());
@@ -18,25 +15,19 @@ const GHL_API_KEY = process.env.GHL_API_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpX
 const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID || 'mEVG4cNTDGfVm2PUOipQ';
 const GHL_BASE_URL = 'https://services.leadconnectorhq.com';
 
+// Store submissions in memory
+const submissions = [];
+
 // Serve the form
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Store submissions (in production, use a database)
-const submissions = [];
-
 // Handle form submission
-app.post('/submit', upload.fields([
-    { name: 'logo', maxCount: 1 },
-    { name: 'scripts', maxCount: 1 },
-    { name: 'clientList', maxCount: 1 },
-    { name: 'faqFile', maxCount: 1 }
-]), async (req, res) => {
+app.post('/submit', async (req, res) => {
     try {
         const formData = req.body;
         
-        // Log the submission
         console.log('Form submission received:', {
             name: `${formData.firstName} ${formData.lastName}`,
             email: formData.email,
@@ -47,8 +38,7 @@ app.post('/submit', upload.fields([
         const submission = {
             id: Date.now(),
             timestamp: new Date().toISOString(),
-            data: formData,
-            files: req.files ? Object.keys(req.files) : []
+            data: formData
         };
         submissions.push(submission);
         
@@ -106,18 +96,6 @@ Additional Info: ${formData.additionalInfo || 'None'}`
             submission.ghlContactId = ghlResponse.data.contact?.id;
         } catch (ghlError) {
             console.log('GHL API error (non-blocking):', ghlError.message);
-            // Continue anyway - form is still saved
-        }
-
-        // Clean up uploaded files
-        if (req.files) {
-            Object.values(req.files).forEach(fileArray => {
-                fileArray.forEach(file => {
-                    fs.unlink(file.path, err => {
-                        if (err) console.error('Error deleting file:', err);
-                    });
-                });
-            });
         }
 
         res.json({ 

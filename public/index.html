@@ -841,20 +841,31 @@
             submitBtn.textContent = 'Submitting...';
 
             try {
-                // Collect form data
-                const formData = new FormData(this);
+                // Collect form data as URL encoded string
+                const formData = new URLSearchParams();
+                
+                // Add all text inputs
+                const inputs = this.querySelectorAll('input[type="text"], input[type="email"], input[type="tel"], input[type="url"], input[type="password"], input[type="time"], input[type="number"], select, textarea');
+                inputs.forEach(input => {
+                    if (input.name && input.value) {
+                        formData.append(input.name, input.value);
+                    }
+                });
                 
                 // Get checkbox values for multi-select
                 const availableDays = Array.from(document.querySelectorAll('input[name="availableDays"]:checked')).map(cb => cb.value);
                 const paymentMethods = Array.from(document.querySelectorAll('input[name="paymentMethod"]:checked')).map(cb => cb.value);
                 
-                formData.set('availableDays', availableDays.join(', '));
-                formData.set('paymentMethod', paymentMethods.join(', '));
+                if (availableDays.length) formData.set('availableDays', availableDays.join(', '));
+                if (paymentMethods.length) formData.set('paymentMethod', paymentMethods.join(', '));
 
                 // Submit to server
                 const response = await fetch('/submit', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: formData.toString()
                 });
 
                 const result = await response.json();
