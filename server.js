@@ -79,9 +79,9 @@ Trigger Keywords: ${formData.triggerKeywords}
 Additional Info: ${formData.additionalInfo || 'None'}`
             };
 
-            // Use agency API endpoint with locationId in body
+            // Agency API uses /contacts/upsert endpoint
             const ghlResponse = await axios.post(
-                `${GHL_BASE_URL}/contacts/`,
+                `${GHL_BASE_URL}/contacts/upsert`,
                 contactData,
                 {
                     headers: {
@@ -96,7 +96,11 @@ Additional Info: ${formData.additionalInfo || 'None'}`
             console.log('GHL Contact Created:', ghlResponse.data.contact?.id);
             submission.ghlContactId = ghlResponse.data.contact?.id;
         } catch (ghlError) {
-            console.log('GHL API error (non-blocking):', ghlError.message);
+            console.log('GHL API error:', ghlError.message);
+            if (ghlError.response) {
+                console.log('GHL Error Status:', ghlError.response.status);
+                console.log('GHL Error Data:', JSON.stringify(ghlError.response.data));
+            }
         }
 
         res.json({ 
