@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/server.js"
+    }
+  ],
+  "env": {
+    "GHL_API_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb21wYW55X2lkIjoiblNLTmN5VkliMVBGc1BmaDBOOHYiLCJ2ZXJzaW9uIjoxLCJpYXQiOjE3Njk3MDAyNTkzODEsInN1YiI6ImpnbnZZalJMZGhiajhvWWN3TkhJIn0.VZiHAl97Y0fJSo6llU4bUa_9Ek-T5QLujKedgKNJXiY",
+    "GHL_LOCATION_ID": "mEVG4cNTDGfVm2PUOipQ"
+  }
+}
