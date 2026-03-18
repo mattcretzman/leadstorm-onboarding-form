@@ -11,7 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
 // GHL Configuration
-const GHL_API_KEY = process.env.GHL_API_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb21wYW55X2lkIjoiblNLTmN5VkliMVBGc1BmaDBOOHYiLCJ2ZXJzaW9uIjoxLCJpYXQiOjE3Njk3MDAyNTkzODEsInN1YiI6ImpnbnZZalJMZGhiajhvWWN3TkhJIn0.VZiHAl97Y0fJSo6llU4bUa_9Ek-T5QLujKedgKNJXiY';
+const GHL_API_KEY = process.env.GHL_API_KEY || 'pit-4984dd29-6cf2-4172-859c-6ccc53a9a949';
 const GHL_LOCATION_ID = process.env.GHL_LOCATION_ID || 'mEVG4cNTDGfVm2PUOipQ';
 const GHL_BASE_URL = 'https://services.leadconnectorhq.com';
 
@@ -79,6 +79,7 @@ Trigger Keywords: ${formData.triggerKeywords}
 Additional Info: ${formData.additionalInfo || 'None'}`
             };
 
+            // Use agency API endpoint with locationId in body
             const ghlResponse = await axios.post(
                 `${GHL_BASE_URL}/contacts/`,
                 contactData,
