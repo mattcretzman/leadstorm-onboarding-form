@@ -14,6 +14,8 @@
   ],
   "env": {
     "GHL_API_KEY": "pit-4984dd29-6cf2-4172-859c-6ccc53a9a949",
-    "GHL_LOCATION_ID": "mEVG4cNTDGfVm2PUOipQ"
+    "GHL_LOCATION_ID": "mEVG4cNTDGfVm2PUOipQ",
+    "RESEND_API_KEY": "re_FSrgcHCV_FPtBmytEG9JTqu1GsoA2Sr6t",
+    "NOTIFY_EMAIL": "matt@stormbreakerdigital.com"
   }
 }
